@@ -34,9 +34,14 @@ def _epoch_from_path(p: Path) -> int:
 
 
 def load_model(checkpoint_path: Path, device: torch.device) -> Seq2SeqTransformer:
-    """Load model from checkpoint."""
-    model = Seq2SeqTransformer.create_default().to(device)
-    ckpt = torch.load(checkpoint_path, map_location=device, weights_only=True)
+    """Load model from checkpoint. Uses create_large() if checkpoint has model_size='large'."""
+    ckpt = torch.load(checkpoint_path, map_location=device, weights_only=False)
+    model_size = ckpt.get("model_size", "default") if isinstance(ckpt, dict) else "default"
+    model = (
+        Seq2SeqTransformer.create_large().to(device)
+        if model_size == "large"
+        else Seq2SeqTransformer.create_default().to(device)
+    )
     if isinstance(ckpt, dict) and "model_state_dict" in ckpt:
         model.load_state_dict(ckpt["model_state_dict"])
     else:
@@ -58,6 +63,12 @@ def main():
         type=Path,
         default=Path("checkpoints"),
         help="Directory containing saved models",
+    )
+    parser.add_argument(
+        "--repetition-penalty",
+        type=float,
+        default=1.5,
+        help="Penalty for repeating tokens (1.0=off, 1.5=default)",
     )
     args = parser.parse_args()
 
@@ -105,7 +116,7 @@ def main():
         if text.lower() in ("quit", "exit", "q"):
             break
 
-        result = predict(model, text, device)
+        result = predict(model, text, device, repetition_penalty=args.repetition_penalty)
         print(f"Logic:  {result}\n")
 
 

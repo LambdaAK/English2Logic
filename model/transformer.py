@@ -118,7 +118,7 @@ class Seq2SeqTransformer(nn.Module):
 
     @staticmethod
     def create_default() -> "Seq2SeqTransformer":
-        """Create model with Phase 4 defaults: 2 layers, 128 hidden, 4 heads."""
+        """Create model with defaults: 2 layers, 128 hidden, 4 heads."""
         eng_vocab = get_english_vocab()
         logic_vocab = get_logic_vocab()
         pad_idx = eng_vocab[PAD]
@@ -130,6 +130,24 @@ class Seq2SeqTransformer(nn.Module):
             num_encoder_layers=2,
             num_decoder_layers=2,
             dim_feedforward=512,
+            dropout=0.1,
+            pad_idx=pad_idx,
+        )
+
+    @staticmethod
+    def create_large() -> "Seq2SeqTransformer":
+        """Create larger model: 4 layers, 256 hidden, 8 heads."""
+        eng_vocab = get_english_vocab()
+        logic_vocab = get_logic_vocab()
+        pad_idx = eng_vocab[PAD]
+        return Seq2SeqTransformer(
+            src_vocab_size=len(eng_vocab),
+            tgt_vocab_size=len(logic_vocab),
+            d_model=256,
+            nhead=8,
+            num_encoder_layers=4,
+            num_decoder_layers=4,
+            dim_feedforward=1024,
             dropout=0.1,
             pad_idx=pad_idx,
         )

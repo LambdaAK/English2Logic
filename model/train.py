@@ -95,26 +95,37 @@ def train_epoch(
     optimizer: torch.optim.Optimizer,
     criterion: nn.Module,
     device: torch.device,
+    scaler: Optional[torch.amp.GradScaler] = None,
 ) -> float:
     model.train()
     total_loss = 0.0
     n = 0
+    use_amp = scaler is not None
+    non_blocking = device.type == "cuda"
+
     for batch in loader:
         src, src_mask, tgt_in, tgt_out, tgt_mask = batch
-        src = src.to(device)
-        src_mask = src_mask.to(device)
-        tgt_in = tgt_in.to(device)
-        tgt_out = tgt_out.to(device)
-        tgt_mask = tgt_mask.to(device)
+        src = src.to(device, non_blocking=non_blocking)
+        src_mask = src_mask.to(device, non_blocking=non_blocking)
+        tgt_in = tgt_in.to(device, non_blocking=non_blocking)
+        tgt_out = tgt_out.to(device, non_blocking=non_blocking)
+        tgt_mask = tgt_mask.to(device, non_blocking=non_blocking)
 
         optimizer.zero_grad()
-        logits = model(src, tgt_in, src_key_padding_mask=src_mask, tgt_key_padding_mask=tgt_mask)
+        with torch.amp.autocast(device_type="cuda", enabled=use_amp):
+            logits = model(src, tgt_in, src_key_padding_mask=src_mask, tgt_key_padding_mask=tgt_mask)
+            loss = criterion(logits.reshape(-1, logits.size(-1)), tgt_out.reshape(-1))
 
-        # logits: (batch, tgt_len, vocab), tgt_out: (batch, tgt_len)
-        loss = criterion(logits.reshape(-1, logits.size(-1)), tgt_out.reshape(-1))
-        loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-        optimizer.step()
+        if scaler is not None:
+            scaler.scale(loss).backward()
+            scaler.unscale_(optimizer)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+            scaler.step(optimizer)
+            scaler.update()
+        else:
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+            optimizer.step()
 
         total_loss += loss.item() * tgt_out.numel()
         n += tgt_out.numel()
@@ -200,13 +211,50 @@ def exact_match_accuracy(
     return correct / len(examples)
 
 
+def _truncate_repetition(tokens: list[str]) -> list[str]:
+    """Truncate invalid repetition: (1) consecutive var/op (CCCC), (2) duplicate top-level formula (OR(A,B)OR(A,B))."""
+    from model.tokens import LOGIC_VARIABLES, LOGIC_OPERATORS
+    repeatable = frozenset(LOGIC_VARIABLES) | frozenset(LOGIC_OPERATORS)
+    out = []
+    prev = None
+    depth = 0
+    completed_top = False  # True after we've closed the top-level formula
+
+    for t in tokens:
+        if t in repeatable and t == prev:
+            break  # Consecutive repeat (CCCC)
+        if t == "(":
+            depth += 1
+        elif t == ")":
+            depth -= 1
+            if depth == 0:
+                completed_top = True
+        # At depth 0, starting a new top-level formula after one is complete = duplicate
+        if depth == 0 and t in repeatable and completed_top:
+            break
+        prev = t
+        out.append(t)
+    return out
+
+
+def _balance_parens(tokens: list[str]) -> list[str]:
+    """Append ')' to balance unclosed parentheses."""
+    open_count = sum(1 for t in tokens if t == "(")
+    close_count = sum(1 for t in tokens if t == ")")
+    out = tokens[:]
+    for _ in range(open_count - close_count):
+        out.append(")")
+    return out
+
+
 def predict(
     model: Seq2SeqTransformer,
     english: str,
     device: torch.device,
     max_len: int = 64,
+    repetition_penalty: float = 1.5,
 ) -> str:
-    """Translate English to logic formula (greedy decode)."""
+    """Translate English to logic formula (greedy decode with repetition penalty)."""
     model.eval()
     eng_vocab = get_english_vocab()
     logic_vocab = get_logic_vocab()
@@ -226,12 +274,21 @@ def predict(
             tgt_in = torch.tensor([generated], dtype=torch.long, device=device)
             tgt_key_padding = torch.zeros(1, len(generated), dtype=torch.bool, device=device)
             logits = model(src, tgt_in, src_key_padding_mask=src_key_padding_mask, tgt_key_padding_mask=tgt_key_padding)
-            next_id = logits[0, -1, :].argmax().item()
-            if next_id == eos_idx:
+            next_logits = logits[0, -1, :].float().clone()
+
+            # Repetition penalty: discourage already-generated tokens
+            if repetition_penalty != 1.0:
+                for token_id in set(generated[1:]):
+                    next_logits[token_id] /= repetition_penalty
+
+            next_id = next_logits.argmax().item()
+            if next_id == eos_idx or next_id == pad_idx:
                 break
             generated.append(next_id)
 
-    tokens = [id_to_token.get(i, "<unk>") for i in generated[1:]]  # Skip SOS
+    tokens = [id_to_token.get(i, "<unk>") for i in generated[1:]]
+    tokens = _truncate_repetition(tokens)
+    tokens = _balance_parens(tokens)
     return detokenize_logic(tokens)
 
 
@@ -243,6 +300,11 @@ def run_overfit_test(
     lr: float = 5e-4,
     seed: int = 42,
     save_dir: Optional[Path] = None,
+    num_workers: int = 0,
+    amp: bool = False,
+    compile_model: bool = False,
+    eval_every: int = 1,
+    model_size: str = "default",
 ) -> float:
     """
     Overfit on a small subset. Target: >95% exact match on training set.
@@ -250,6 +312,9 @@ def run_overfit_test(
     """
     random.seed(seed)
     torch.manual_seed(seed)
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    use_cuda = device.type == "cuda"
 
     if save_dir is not None:
         save_dir = Path(save_dir)
@@ -274,28 +339,51 @@ def run_overfit_test(
         batch_size=batch_size,
         shuffle=True,
         collate_fn=collate,
+        num_workers=num_workers,
+        pin_memory=use_cuda,
+        persistent_workers=num_workers > 0,
     )
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = Seq2SeqTransformer.create_default().to(device)
+    model = (
+        Seq2SeqTransformer.create_large().to(device)
+        if model_size == "large"
+        else Seq2SeqTransformer.create_default().to(device)
+    )
+    if compile_model and hasattr(torch, "compile"):
+        model = torch.compile(model, mode="default")
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     criterion = nn.CrossEntropyLoss(ignore_index=pad_idx)
+    scaler = torch.amp.GradScaler("cuda") if amp and use_cuda else None
+
+    print(f"Device: {device} | model={model_size} | batch_size={batch_size} | workers={num_workers} | amp={amp} | compile={compile_model}")
 
     for epoch in range(n_epochs):
-        loss = train_epoch(model, loader, optimizer, criterion, device)
-        acc = exact_match_accuracy(model, examples, device, batch_size)
-        print(f"Epoch {epoch + 1}: loss={loss:.4f}, acc={acc:.2%}")
+        loss = train_epoch(model, loader, optimizer, criterion, device, scaler=scaler)
+        acc = 0.0
+        if (epoch + 1) % eval_every == 0 or epoch == 0:
+            acc = exact_match_accuracy(model, examples, device, batch_size)
+            print(f"Epoch {epoch + 1}: loss={loss:.4f}, acc={acc:.2%}")
+        else:
+            print(f"Epoch {epoch + 1}: loss={loss:.4f}")
 
         if save_dir is not None and (epoch + 1) % 10 == 0:
             path = save_dir / f"model_epoch_{epoch + 1}.pt"
-            torch.save({"model_state_dict": model.state_dict(), "epoch": epoch + 1}, path)
+            torch.save({
+                "model_state_dict": model.state_dict(),
+                "epoch": epoch + 1,
+                "model_size": model_size,
+            }, path)
             print(f"  Saved {path}")
 
         if acc >= 0.95:
             print(f"Overfit achieved at epoch {epoch + 1}")
             if save_dir is not None:
                 path = save_dir / f"model_epoch_{epoch + 1}_final.pt"
-                torch.save({"model_state_dict": model.state_dict(), "epoch": epoch + 1}, path)
+                torch.save({
+                    "model_state_dict": model.state_dict(),
+                    "epoch": epoch + 1,
+                    "model_size": model_size,
+                }, path)
                 print(f"  Saved {path}")
             break
 
@@ -309,11 +397,21 @@ def main():
     parser.add_argument("--data", type=Path, default=Path("data/train.json"))
     parser.add_argument("--n", type=int, default=300, help="Number of examples")
     parser.add_argument("--epochs", type=int, default=150)
-    parser.add_argument("--batch-size", type=int, default=16)
+    parser.add_argument("--batch-size", type=int, default=256 if torch.cuda.is_available() else 16,
+                        help="Batch size (256 recommended for A100)")
     parser.add_argument("--lr", type=float, default=5e-4)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--save-dir", type=Path, default=Path("checkpoints"), help="Save model every 10 epochs")
+    parser.add_argument("--num-workers", type=int, default=4 if torch.cuda.is_available() else 0,
+                        help="DataLoader workers (4+ for GPU)")
+    parser.add_argument("--no-amp", action="store_true", help="Disable mixed precision (on by default for CUDA)")
+    parser.add_argument("--compile", action="store_true", help="Use torch.compile for faster training")
+    parser.add_argument("--eval-every", type=int, default=1, help="Evaluate accuracy every N epochs")
+    parser.add_argument("--large", action="store_true", help="Use larger model (4 layers, 256 dim, 8 heads)")
     args = parser.parse_args()
+
+    amp = not args.no_amp and torch.cuda.is_available()
+    model_size = "large" if args.large else "default"
 
     acc = run_overfit_test(
         data_path=args.data,
@@ -323,6 +421,11 @@ def main():
         lr=args.lr,
         seed=args.seed,
         save_dir=args.save_dir,
+        num_workers=args.num_workers,
+        amp=amp,
+        compile_model=args.compile,
+        eval_every=args.eval_every,
+        model_size=model_size,
     )
     print(f"Final accuracy: {acc:.2%}")
     return 0 if acc >= 0.95 else 1
