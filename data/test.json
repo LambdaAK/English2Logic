@@ -1,0 +1,402 @@
+[
+  {
+    "input": "it is not the case that whenever D is true, D holds is false",
+    "target": "NOT(NOT(IMPLIES(D,D)))"
+  },
+  {
+    "input": "A holds does not hold",
+    "target": "NOT(A)"
+  },
+  {
+    "input": "A holds implies C",
+    "target": "IMPLIES(A,C)"
+  },
+  {
+    "input": "A holds together with A is true",
+    "target": "AND(A,A)"
+  },
+  {
+    "input": "both B holds and D holds and B holds",
+    "target": "AND(B,AND(D,B))"
+  },
+  {
+    "input": "not D is equivalent to either B is true or B is false",
+    "target": "NOT(IFF(NOT(D),OR(B,B)))"
+  },
+  {
+    "input": "E iff E is false",
+    "target": "IFF(E,NOT(E))"
+  },
+  {
+    "input": "provided that A holds, D is true or D holds exactly when D holds",
+    "target": "IMPLIES(A,OR(D,IFF(D,D)))"
+  },
+  {
+    "input": "either B holds or not B holds does not hold",
+    "target": "OR(B,NOT(NOT(B)))"
+  },
+  {
+    "input": "not not D if D holds",
+    "target": "NOT(NOT(IMPLIES(D,D)))"
+  },
+  {
+    "input": "A is true is equivalent to E is true together with C holds iff B holds",
+    "target": "AND(IFF(A,E),IFF(C,B))"
+  },
+  {
+    "input": "E and C implies B",
+    "target": "AND(E,IMPLIES(C,B))"
+  },
+  {
+    "input": "it is not the case that C is true iff both D and D is true",
+    "target": "IFF(NOT(C),AND(D,D))"
+  },
+  {
+    "input": "whenever D is true, D holds",
+    "target": "IMPLIES(D,D)"
+  },
+  {
+    "input": "at least one of E or B",
+    "target": "OR(E,B)"
+  },
+  {
+    "input": "it is not the case that E is true implies E does not hold",
+    "target": "NOT(NOT(IMPLIES(E,E)))"
+  },
+  {
+    "input": "at least one of E holds or C holds iff B implies D is true",
+    "target": "OR(E,IFF(C,IMPLIES(B,D)))"
+  },
+  {
+    "input": "either D holds or B is true follows from A is true",
+    "target": "IMPLIES(A,OR(D,B))"
+  },
+  {
+    "input": "C if B",
+    "target": "IMPLIES(B,C)"
+  },
+  {
+    "input": "D holds does not hold",
+    "target": "NOT(D)"
+  },
+  {
+    "input": "E exactly when A is true is equivalent to D is true or B is true",
+    "target": "IFF(E,IFF(A,OR(D,B)))"
+  },
+  {
+    "input": "both D holds and A",
+    "target": "AND(D,A)"
+  },
+  {
+    "input": "A is true or C is true if D together with D is true together with E is true exactly when A holds if and only if C holds",
+    "target": "AND(IMPLIES(AND(D,D),OR(A,C)),IFF(E,IFF(A,C)))"
+  },
+  {
+    "input": "it is not the case that E holds",
+    "target": "NOT(E)"
+  },
+  {
+    "input": "not A is true is false",
+    "target": "NOT(NOT(A))"
+  },
+  {
+    "input": "D holds or B holds",
+    "target": "OR(D,B)"
+  },
+  {
+    "input": "either D or not D is true",
+    "target": "OR(D,NOT(D))"
+  },
+  {
+    "input": "if not not B holds then B is true and A holds is false",
+    "target": "IMPLIES(NOT(NOT(B)),NOT(AND(B,A)))"
+  },
+  {
+    "input": "A holds together with E is true implies at least one of C holds or C holds",
+    "target": "IMPLIES(AND(A,E),OR(C,C))"
+  },
+  {
+    "input": "C is true or A",
+    "target": "OR(C,A)"
+  },
+  {
+    "input": "E is true if and only if D is true together with it is not the case that C is true together with D holds",
+    "target": "AND(IFF(E,D),NOT(AND(C,D)))"
+  },
+  {
+    "input": "A holds exactly when whenever E holds, provided that C, E is true",
+    "target": "IFF(A,IMPLIES(E,IMPLIES(C,E)))"
+  },
+  {
+    "input": "either E or C is true",
+    "target": "OR(E,C)"
+  },
+  {
+    "input": "at least one of A is true or A holds or A exactly when E is true",
+    "target": "OR(OR(A,A),IFF(A,E))"
+  },
+  {
+    "input": "if C is true then A holds follows from A holds if either A holds or B is true",
+    "target": "IMPLIES(OR(A,B),IMPLIES(C,IMPLIES(A,A)))"
+  },
+  {
+    "input": "C is true if and only if E holds and E if A is true if and only if A is true is false",
+    "target": "IMPLIES(IFF(A,NOT(A)),IFF(C,AND(E,E)))"
+  },
+  {
+    "input": "both A holds and E together with B holds",
+    "target": "AND(A,AND(E,B))"
+  },
+  {
+    "input": "either both B is true and C or E is equivalent to A holds is false",
+    "target": "OR(AND(B,C),IFF(E,NOT(A)))"
+  },
+  {
+    "input": "at least one of E is true or C holds is equivalent to provided that B, C is true together with C is equivalent to A is true if B holds",
+    "target": "AND(IFF(OR(E,C),IMPLIES(B,C)),IMPLIES(B,IFF(C,A)))"
+  },
+  {
+    "input": "B holds exactly when E is true iff A is true",
+    "target": "IFF(B,IFF(E,A))"
+  },
+  {
+    "input": "E or B is true if C is true is false",
+    "target": "IMPLIES(NOT(C),OR(E,B))"
+  },
+  {
+    "input": "at least one of B or A holds together with E is true iff D is true",
+    "target": "OR(B,AND(A,IFF(E,D)))"
+  },
+  {
+    "input": "at least one of E is true iff C or C if and only if C holds and D",
+    "target": "OR(IFF(E,C),IFF(C,AND(C,D)))"
+  },
+  {
+    "input": "B holds exactly when E is equivalent to C holds",
+    "target": "IFF(B,IFF(E,C))"
+  },
+  {
+    "input": "if D then C is true",
+    "target": "IMPLIES(D,C)"
+  },
+  {
+    "input": "not A is true follows from it is not the case that E holds",
+    "target": "IMPLIES(NOT(E),NOT(A))"
+  },
+  {
+    "input": "D does not hold follows from E if and only if it is not the case that E if and only if C",
+    "target": "IFF(IMPLIES(E,NOT(D)),NOT(IFF(E,C)))"
+  },
+  {
+    "input": "not A holds iff E holds implies it is not the case that C",
+    "target": "NOT(IMPLIES(IFF(A,E),NOT(C)))"
+  },
+  {
+    "input": "provided that D, not A is true",
+    "target": "IMPLIES(D,NOT(A))"
+  },
+  {
+    "input": "not C follows from A is true",
+    "target": "IMPLIES(A,NOT(C))"
+  },
+  {
+    "input": "B together with D is true",
+    "target": "AND(B,D)"
+  },
+  {
+    "input": "not B is true and D holds",
+    "target": "NOT(AND(B,D))"
+  },
+  {
+    "input": "either E or A is true does not hold",
+    "target": "OR(E,NOT(A))"
+  },
+  {
+    "input": "E is true is false exactly when not B holds and E",
+    "target": "IFF(NOT(E),NOT(AND(B,E)))"
+  },
+  {
+    "input": "if not D or E is true exactly when A then B does not hold iff not A",
+    "target": "IMPLIES(OR(NOT(D),IFF(E,A)),IFF(NOT(B),NOT(A)))"
+  },
+  {
+    "input": "not A if A or A and B is true",
+    "target": "NOT(OR(IMPLIES(A,A),AND(A,B)))"
+  },
+  {
+    "input": "both D is true and C is true iff B and E is true and D is false",
+    "target": "AND(AND(D,IFF(C,B)),NOT(AND(E,D)))"
+  },
+  {
+    "input": "D exactly when D is true",
+    "target": "IFF(D,D)"
+  },
+  {
+    "input": "E is equivalent to D is true",
+    "target": "IFF(E,D)"
+  },
+  {
+    "input": "either C holds is equivalent to D holds implies B holds or whenever C, E is equivalent to it is not the case that C",
+    "target": "OR(IFF(C,IMPLIES(D,B)),IFF(IMPLIES(C,E),NOT(C)))"
+  },
+  {
+    "input": "if E then D or A holds is false",
+    "target": "OR(IMPLIES(E,D),NOT(A))"
+  },
+  {
+    "input": "A and C holds exactly when A holds",
+    "target": "AND(A,IFF(C,A))"
+  },
+  {
+    "input": "it is not the case that E is true and B is true is equivalent to whenever E is true, not B",
+    "target": "IFF(NOT(AND(E,B)),IMPLIES(E,NOT(B)))"
+  },
+  {
+    "input": "if C is true does not hold then whenever D is true, C",
+    "target": "IMPLIES(NOT(C),IMPLIES(D,C))"
+  },
+  {
+    "input": "at least one of E or A is true follows from C holds",
+    "target": "IMPLIES(C,OR(E,A))"
+  },
+  {
+    "input": "C holds exactly when D is true",
+    "target": "IFF(C,D)"
+  },
+  {
+    "input": "A is true or A is true",
+    "target": "OR(A,A)"
+  },
+  {
+    "input": "C is true or C",
+    "target": "OR(C,C)"
+  },
+  {
+    "input": "A holds and B holds or C holds exactly when A",
+    "target": "AND(A,OR(B,IFF(C,A)))"
+  },
+  {
+    "input": "provided that B is true, D holds is equivalent to C is true",
+    "target": "IMPLIES(B,IFF(D,C))"
+  },
+  {
+    "input": "A and A holds does not hold iff both provided that A, A holds and B together with E is true",
+    "target": "IFF(AND(A,NOT(A)),AND(IMPLIES(A,A),AND(B,E)))"
+  },
+  {
+    "input": "either A holds or C is true",
+    "target": "OR(A,C)"
+  },
+  {
+    "input": "A is true or D is true or not if C then B",
+    "target": "OR(OR(A,D),NOT(IMPLIES(C,B)))"
+  },
+  {
+    "input": "D holds or A",
+    "target": "OR(D,A)"
+  },
+  {
+    "input": "both not D and B is true if and only if D does not hold",
+    "target": "NOT(AND(NOT(D),IFF(B,D)))"
+  },
+  {
+    "input": "either it is not the case that D or E if E holds",
+    "target": "OR(NOT(D),IMPLIES(E,E))"
+  },
+  {
+    "input": "E holds exactly when C if E",
+    "target": "IFF(E,IMPLIES(E,C))"
+  },
+  {
+    "input": "not A is true and C is true does not hold",
+    "target": "NOT(NOT(AND(A,C)))"
+  },
+  {
+    "input": "either A holds or C or provided that B is true, B",
+    "target": "OR(OR(A,C),IMPLIES(B,B))"
+  },
+  {
+    "input": "A and it is not the case that D",
+    "target": "AND(A,NOT(D))"
+  },
+  {
+    "input": "C is true iff D is true and C holds and E holds",
+    "target": "AND(IFF(C,D),AND(C,E))"
+  },
+  {
+    "input": "C together with D implies E holds iff A",
+    "target": "AND(C,IMPLIES(D,IFF(E,A)))"
+  },
+  {
+    "input": "D holds if E holds",
+    "target": "IMPLIES(E,D)"
+  },
+  {
+    "input": "not C holds does not hold if and only if B holds iff both E is true and B is true",
+    "target": "IFF(NOT(NOT(C)),IFF(B,AND(E,B)))"
+  },
+  {
+    "input": "at least one of E holds or D implies C together with D is true does not hold",
+    "target": "IMPLIES(OR(E,D),NOT(AND(C,D)))"
+  },
+  {
+    "input": "not A is true together with D is true",
+    "target": "NOT(AND(A,D))"
+  },
+  {
+    "input": "A exactly when E is true or C",
+    "target": "IFF(A,OR(E,C))"
+  },
+  {
+    "input": "not B or E",
+    "target": "NOT(OR(B,E))"
+  },
+  {
+    "input": "both E does not hold and A and B holds",
+    "target": "AND(NOT(E),AND(A,B))"
+  },
+  {
+    "input": "C is true iff C is true and A is true does not hold",
+    "target": "AND(IFF(C,C),NOT(A))"
+  },
+  {
+    "input": "B is true together with D holds",
+    "target": "AND(B,D)"
+  },
+  {
+    "input": "provided that C, E",
+    "target": "IMPLIES(C,E)"
+  },
+  {
+    "input": "A holds or E",
+    "target": "OR(A,E)"
+  },
+  {
+    "input": "C holds or D is false if it is not the case that A holds",
+    "target": "IMPLIES(NOT(A),OR(C,NOT(D)))"
+  },
+  {
+    "input": "A is true if and only if D holds",
+    "target": "IFF(A,D)"
+  },
+  {
+    "input": "at least one of either A or C is true or E is false",
+    "target": "OR(OR(A,C),NOT(E))"
+  },
+  {
+    "input": "not A does not hold if and only if A holds or D holds",
+    "target": "NOT(IFF(NOT(A),OR(A,D)))"
+  },
+  {
+    "input": "E",
+    "target": "E"
+  },
+  {
+    "input": "D holds is false does not hold",
+    "target": "NOT(NOT(D))"
+  },
+  {
+    "input": "both A is true is equivalent to B is false and it is not the case that E holds is false",
+    "target": "AND(IFF(A,NOT(B)),NOT(NOT(E)))"
+  }
+]
