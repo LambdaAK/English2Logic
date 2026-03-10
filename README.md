@@ -29,6 +29,20 @@ A transformer model that translates natural English sentences into propositional
 | A and B or C and D | `OR(AND(A,B),AND(C,D))` |
 | C and (if B then C or D) | `AND(C,IMPLIES(B,OR(C,D)))` |
 
+## Usage
+
+Run the trained model interactively:
+```bash
+python interact.py --model checkpoints/model_epoch_102_final.pt
+```
+
+Or evaluate on test data:
+```bash
+python evaluate.py --model checkpoints/model_epoch_102_final.pt
+```
+
+(Generate the dataset first if you don't have `data/` yet.)
+
 ## Training the current model
 
 These commands were used to train the included model (~88% accuracy on the default model with 10k examples). Training took about 30 minutes on an A100 GPU.
