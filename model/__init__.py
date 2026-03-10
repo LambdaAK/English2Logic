@@ -1,5 +1,6 @@
 """Model components: tokenizers, transformer, training."""
 
+from model.transformer import Seq2SeqTransformer
 from model.tokenizer import (
     check_english_oov,
     check_logic_oov,
@@ -29,6 +30,7 @@ from model.tokens import (
 )
 
 __all__ = [
+    "Seq2SeqTransformer",
     "check_english_oov",
     "check_logic_oov",
     "detokenize_logic",
